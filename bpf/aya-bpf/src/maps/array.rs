@@ -57,4 +57,16 @@ impl<T> Array<T> {
             NonNull::new(value as *mut T).map(|p| p.as_ref())
         }
     }
+
+    pub fn set(&self, index: u32, value: &T, flags: u32) -> Result<(), i64> {
+        let ret = unsafe {
+            bpf_map_update_elem(
+                self.def.get() as *mut _,
+                &index as *const _ as *const c_void,
+                &value as *const _ as *const c_void,
+                flags
+            )
+        };
+        (ret >= 0).then(|| ()).ok_or(ret)
+    }
 }
