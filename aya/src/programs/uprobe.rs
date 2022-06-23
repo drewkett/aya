@@ -15,11 +15,10 @@ use thiserror::Error;
 use crate::{
     generated::bpf_prog_type::BPF_PROG_TYPE_KPROBE,
     programs::{
-        define_link_wrapper, load_program, load_program,
+        define_link_wrapper, load_program,
         perf_attach::{PerfLink, PerfLinkId},
         probe::{attach, ProbeKind},
-        probe::{attach, ProbeKind},
-        LinkRef, OwnedLink, ProgramData, ProgramData, ProgramError, ProgramError,
+        OwnedLink, ProgramData, ProgramError,
     },
 };
 
