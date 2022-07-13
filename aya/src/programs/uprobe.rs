@@ -236,7 +236,7 @@ pub(crate) struct LdSoCache {
     entries: Vec<CacheEntry>,
 }
 
-#[allow(unused)]
+#[allow(unused, missing_docs)]
 #[derive(Copy, Clone, Debug)]
 pub enum TargetEndian {
     Native,
@@ -275,26 +275,18 @@ impl LdSoCache {
         };
 
         let mut buf = [0u8; LD_SO_CACHE_HEADER.len()];
-        let mut buf_old = [0u8; LD_SO_CACHE_HEADER_OLD.len()];
         cursor.read_exact(&mut buf)?;
-        cursor.set_position(0);
-        cursor.read_exact(&mut buf_old)?;
-        let header = std::str::from_utf8(&buf).or(std::str::from_utf8(&buf_old).or(Err(
-            io::Error::new(io::ErrorKind::InvalidData, "invalid ld.so.cache header"),
-        )))?;
         let mut is_old: bool = false;
-        match header {
-            LD_SO_CACHE_HEADER => {
-                // we have to reset the position since we found the new header
-                cursor.set_position(LD_SO_CACHE_HEADER.len() as u64);
-            }
-            LD_SO_CACHE_HEADER_OLD => {
+        if buf != LD_SO_CACHE_HEADER.as_bytes() {
+            let mut buf_old = [0u8; LD_SO_CACHE_HEADER_OLD.len()];
+            cursor.set_position(0);
+            cursor.read_exact(&mut buf_old)?;
+            if buf_old == LD_SO_CACHE_HEADER_OLD.as_bytes() {
                 is_old = true;
                 // add a padding corresponding to LD_SO_CACHE_HEADER_OLD
                 // size 11 + 1 to align on 12 bytes or 3*4 bounds
-                cursor.consume(1)
-            }
-            _ => {
+                cursor.consume(1);
+            } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     "invalid ld.so.cache header",
