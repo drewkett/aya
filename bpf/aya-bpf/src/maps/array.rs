@@ -8,6 +8,30 @@ use crate::{
     maps::PinningType,
 };
 
+/// A fixed-size array.
+///
+/// The size of the array is defined using the `bpf_map_def::max_entries` field
+/// which is set via `Array::with_max_entries`. All the entries are
+/// zero-initialized when the map is created.
+///
+/// # Minimum kernel version
+///
+/// The minimum kernel version required to use this feature is 3.19.
+///
+/// # Examples
+/// ```no_run
+/// use aya_bpf::macros::map;
+///
+/// #[map]
+/// static mut ARRAY: Array<u64> = Array::with_max_entries(1, 0);
+///
+/// #[uprobe]
+/// fn sample_uprobe(ctx: ProbeContext) {
+///     if let Some(value) = unsafe { ARRAY.get(0) } {
+///         // Do something with value
+///     }
+/// }
+/// ```
 #[repr(transparent)]
 pub struct Array<T> {
     def: UnsafeCell<bpf_map_def>,
@@ -17,6 +41,7 @@ pub struct Array<T> {
 unsafe impl<T: Sync> Sync for Array<T> {}
 
 impl<T> Array<T> {
+    /// Define an Array with elements of type `T` with size `max_entries`.
     pub const fn with_max_entries(max_entries: u32, flags: u32) -> Array<T> {
         Array {
             def: UnsafeCell::new(bpf_map_def {
@@ -47,6 +72,10 @@ impl<T> Array<T> {
         }
     }
 
+    /// Returns the value stored at the given index.
+    ///
+    /// The BPF verifier requires that the option is handled correctly. You
+    /// cannot call `unwrap()` on the `Option`, for example.
     pub fn get(&self, index: u32) -> Option<&T> {
         unsafe {
             let value = bpf_map_lookup_elem(
